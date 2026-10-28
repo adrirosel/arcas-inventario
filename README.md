@@ -42,3 +42,5 @@ npm start
 
 
 [Git]: https://git-scm.com/docs/git/es
+
+Responsable de despliegue: Adrián Rosel Martínez
