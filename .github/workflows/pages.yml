@@ -1,0 +1,55 @@
+name: Tests y despliegue en GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    env:
+      TOKEN_CENTRO: ${{ secrets.CLAVE_AUDITORIA_CENTRO }}
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+      - name: Configurar Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Comprobar secreto de auditoría y ejecutar tests
+        run: |
+          test -n "$TOKEN_CENTRO"
+          node --test tests/inventario.test.mjs
+
+  despliegue:
+    needs: tests
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Subir artefacto web (solo carpeta site)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Desplegar en GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
